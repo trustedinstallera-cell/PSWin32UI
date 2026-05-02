@@ -1,47 +1,54 @@
-#include "Color.h"
 #pragma once
+#include "Color.h"
 #include <windows.h>
 
-enum FontUnit {
-    Points,    // 点（1/72 英寸）
-    Pixels,    // 屏幕像素
-    Number     // 中文号数
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
+    enum FontUnit {
+        Points,    // 点（1/72 英寸）
+        Pixels,    // 屏幕像素
+        Number     // 中文号数
+    };
 
-class Font{
-public:
-    Color color;
-    std::wstring name;
-    bool isBold;
-    bool isItalic;
-    bool hasUnderline;
-    bool hasStrikethrough;
-    int size; //Windows 转换有精度损失，无法避免
-    
-    // 获取系统默认字体大小（点值）
-    static double getSystemDefaultPoints() {
-        static double cached = []() -> double {
-            NONCLIENTMETRICS ncm = {0};
-            ncm.cbSize = sizeof(NONCLIENTMETRICS);
-            
-            if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0)) {
-                // lfHeight 是逻辑像素值（负数）
-                int pixelHeight = -ncm.lfMessageFont.lfHeight;
-                // 获取屏幕 DPI
-                HDC hdc = GetDC(NULL);
-                int dpi = GetDeviceCaps(hdc, LOGPIXELSY);
-                ReleaseDC(NULL, hdc);
-                // 像素转点：points = pixels * 72 / DPI
-                return (double)pixelHeight * 72.0 / dpi;
+    class Font {
+    public:
+        Color color;
+        std::wstring name;
+        bool isBold;
+        bool isItalic;
+        bool hasUnderline;
+        bool hasStrikethrough;
+        int size; //Windows 转换有精度损失，无法避免
+
+        // 获取系统默认字体大小（点值）
+        static double GetDefaultFontSize() {
+            static double cached = 0.0;
+            static bool initialized = false;
+
+            if (!initialized) {
+                NONCLIENTMETRICS ncm;
+                ZeroMemory(&ncm, sizeof(NONCLIENTMETRICS));
+                ncm.cbSize = sizeof(NONCLIENTMETRICS);
+
+                if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(NONCLIENTMETRICS), &ncm, 0)) {
+                    int pixelHeight = -ncm.lfMessageFont.lfHeight;
+                    HDC hdc = GetDC(NULL);
+                    int dpi = GetDeviceCaps(hdc, LOGPIXELSY);
+                    ReleaseDC(NULL, hdc);
+                    cached = (double)pixelHeight * 72.0 / dpi;
+                }
+                else {
+                    cached = 9.0;
+                }
+
+                initialized = true;
             }
-            
-            // 回退：硬编码 9pt（Windows 经典默认值）
-            return 9.0;
-        }();
-        return cached;
-    }
-    
-    static double fromChineseNumber(const wchar_t* chineseNumber) {
+
+            return cached;
+        }
+
+        static double fromChineseNumber(const wchar_t* chineseNumber) {
             static const struct { const wchar_t* name; double points; } map[] = {
                 {L"初号", 42.0},
                 {L"小初", 36.0},
@@ -57,29 +64,30 @@ public:
                 {L"八号", 5.0},
                 // 可继续扩展
             }; // 警告：初始化列表
-            
+
             /*需要别名时改用
             static const std::pair<const wchar_t*, double> fontMap[]
             */
-            
-            for (size_t i = 0; i < sizeof(map)/sizeof(map[0]); ++i) {
+
+            for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); ++i) {
                 if (wcscmp(chineseNumber, map[i].name) == 0)
                     return map[i].points;
             }
             return 10.5; // 默认五号
         }
     };
-        
+
     static int convertSize(int value, FontUnit fromUnit, HDC hdc = GetDC(NULL)) {
         switch (fromUnit) {
-            case FontUnit::Points:
-                return -MulDiv(value, GetDeviceCaps(hdc, LOGPIXELSY), 72);
-            case FontUnit::Pixels:
-                return -value;
-            case FontUnit::Number:
-                // 号数转点再转像素
-                // TODO
-				//return -MulDiv(numberToPoints(value), GetDeviceCaps(hdc, LOGPIXELSY), 72);
+        case Points:
+            return -MulDiv(value, GetDeviceCaps(hdc, LOGPIXELSY), 72);
+        case Pixels:
+            return -value;
+        case Number:
+            // 号数转点再转像素
+            // TODO
+            //return -MulDiv(numberToPoints(value), GetDeviceCaps(hdc, LOGPIXELSY), 72);
+            break;
         }
         return -value;
     }
@@ -118,3 +126,7 @@ font.size = _n("五号");     // 五号字
       LPCSTR  lpszFace
     );
 */
+
+#ifdef __cplusplus
+}
+#endif

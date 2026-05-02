@@ -1,10 +1,13 @@
+#pragma once
+#pragma once
 #include "control.h"
 #include <functional>
 #include <windowsx.h>
 #include <string>
 #include <tchar.h>
 
-enum MouseButtons {
+namespace MouseButtons{
+enum Enum {
     None   = 0,
     Left   = 1,
     Right  = 2,
@@ -12,29 +15,44 @@ enum MouseButtons {
     XButton1 = 8,
     XButton2 = 16
 };
-
-enum ModifierKeys {
+}
+namespace ModifierKeys{ 
+enum Enum {
     None    = 0,
     Shift   = 1,
     Control = 2,
     Alt     = 4
 };
+}
 
 class Button : public Control {
 public:
     std::function<void(Button&)> onClick;
 	std::function<void(Button&)> onMouseUp;
 	std::function<void(Button&)> onMouseMove;
-	
+
+	std::wstring text;
+	DWORD dwStyle;
+	HWND parent;
+	Point StartPosition;
+
 	void show(){
-		
+			CreateWindowEx(	0,_T("BUTTON"),this->text.c_str(),this->dwStyle,this->startPosition.x,this->startPosition.y,this->size.x,this->size.y,parent,NULL,GetModuleHandle(NULL),NULL);
 	}
 
-	Button(){
-		
+	Button(HWND parent=nullptr){
+		this->dwStyle=WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON; // TODO: Check items for BS_*
+		this->parent=parent;
+		if(this->parent==nullptr){
+			if(Control::defaultHwnd!=nullptr){
+				this->parent=Control::defaultHwnd;
+			}
+		}
 	}
 
 protected:
+
+	
     
 	/*
 	LRESULT OnMouseMove(WPARAM wParam, LPARAM lParam) {
@@ -103,10 +121,10 @@ protected:
 
 // MouseEventArgs 定义
 struct MouseEventArgs {
-    MouseButtons button;        // 哪个按键触发
+    MouseButtons::Enum button;        // 哪个按键触发
     Point location;             // 相对于控件客户区的坐标
     int clicks;                 // 1=单击, 2=双击
-    ModifierKeys modifiers;     // Ctrl/Shift/Alt 状态
+    ModifierKeys::Enum modifiers;     // Ctrl/Shift/Alt 状态
     bool handled;               // 可选：是否已处理（事件冒泡用）
     
     MouseEventArgs()
