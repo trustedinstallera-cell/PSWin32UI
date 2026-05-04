@@ -1,5 +1,14 @@
 #pragma once
+#ifndef UNICODE
 #define UNICODE
+#endif
+
+#ifndef DISABLE_VISUAL_STYLES
+#pragma comment(linker,"\"/manifestdependency:type='win32' \
+name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
+
 #include <Windows.h>
 #include <stdexcept>
 #include <cassert>
@@ -12,6 +21,7 @@ struct Point {
 	};
 	Position position;
 	Point() :x(-1), y(-1), position(Manual) {}
+	Point(int x, int y) :x(x), y(y) {}
 };
 
 struct Size {
@@ -32,9 +42,11 @@ struct Param {
 
 }*/
 
+bool fixDefaultHwnd = false;
+HWND defaultHwnd_ = nullptr;
+
 class Control {
-public:
-	HWND defaultHwnd;
+public:	
 	HWND hwnd;
 	Size size;
 	Point startPosition;
@@ -76,7 +88,7 @@ protected:
 public:
 	Control() : hwnd(nullptr) {
 		this->id = generateId();
-		this->defaultHwnd = nullptr;
+		defaultHwnd_ = nullptr;
 	}
 
 	void dispose() {

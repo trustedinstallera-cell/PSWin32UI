@@ -20,6 +20,11 @@ extern "C" {
         bool hasUnderline;
         bool hasStrikethrough;
         int size; //Windows 转换有精度损失，无法避免
+        int rotate;
+
+        Font() {
+
+        }
 
         // 获取系统默认字体大小（点值）
         static double GetDefaultFontSize() {
