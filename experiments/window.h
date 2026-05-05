@@ -54,6 +54,8 @@ protected:
 
         this->position = Point(CW_USEDEFAULT, CW_USEDEFAULT);
         this->size = Size(800, 600);
+        this->minSize = Size(-1, -1); // -1 means unlimited
+        this->maxSize = Size(-1, -1);
         this->state = Normal;
     }
 
@@ -104,6 +106,32 @@ protected:
     // 虚函数，子类可重写处理消息
     virtual LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) {
         switch (msg) {
+        case WM_GETMINMAXINFO: {
+            MINMAXINFO* lpMMI = (MINMAXINFO*)lParam;
+            if (this->minSize.x != -1 && this->minSize.y != -1) {
+                lpMMI->ptMinTrackSize.x = this->minSize.x;
+                lpMMI->ptMinTrackSize.y = this->minSize.y;
+            }
+            if (this->maxSize.x != -1 && this->maxSize.y != -1) {
+                lpMMI->ptMaxTrackSize.x = this->maxSize.x;
+                lpMMI->ptMaxTrackSize.y = this->maxSize.y;
+            }
+            return 0;
+        }
+        case WM_COMMAND:
+        {
+            if (HIWORD(wParam) == BN_CLICKED) {
+                HWND hwndBtn = (HWND)lParam;
+
+                Button* btn = reinterpret_cast<Button*>(
+                    GetWindowLongPtr(hwndBtn, GWLP_USERDATA));
+
+                if (btn && btn->onClick) {
+                    btn->onClick(*btn);
+                }
+            }
+            break;
+        }
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
@@ -131,6 +159,8 @@ public:
 
     Point position;
     Size size;
+    Size minSize;
+    Size maxSize;
     InitialState state;
 
     // WS_* 样式成员变量
@@ -322,7 +352,7 @@ public:
             UpdateWindow(hwnd);
         }
 
-        
+
         HMENU hSysCloseMenu = GetSystemMenu(hwnd, this->closeBox);
         if (hSysCloseMenu && !this->closeBox) {
             RemoveMenu(hSysCloseMenu, SC_CLOSE, MF_BYCOMMAND);
@@ -341,5 +371,20 @@ public:
         if (hwnd) {
             UpdateWindow(hwnd);
         }
+    }
+
+    WPARAM run() {
+        MSG msg;
+        while (GetMessage(&msg, nullptr, 0, 0)) {
+            HWND hActive = GetActiveWindow();
+
+            if (hActive && IsDialogMessage(hActive, &msg)) {
+                continue;
+            }
+
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        return msg.wParam;
     }
 };

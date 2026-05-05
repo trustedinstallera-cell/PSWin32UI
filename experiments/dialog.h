@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <functional>
 #include "control.h"
 #include "strings.h"
 #include "ctrltype.h"

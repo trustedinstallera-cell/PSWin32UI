@@ -1,6 +1,4 @@
-﻿#define WIN32_LEAN_AND_MEAN
-//#define _WIN32_IE    0x0600 
-//#define DISABLE_VISUAL_STYLES
+﻿#define _WIN32_IE    0x0600 
 
 #include "control.h"
 #include "button.h"
@@ -10,9 +8,6 @@
 #include "color.h"
 #include "dialog.h"
 
-void OnClick() {
-
-}
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR lpCmd, int nShow) {
     param.hInstance = hInst;
@@ -20,32 +15,38 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR lpCmd, int nShow) {
     param.nCmdShow = nShow;
 
     Window window;
+    window.minimizeBox = false;
     window.maximizeBox = false;
-    window.closeBox = false;
-    window.text = L"My Window";   
+    window.text = L"My Window";
+    window.minSize = Size(200, 350);
+    window.minimized = true;
+    window.show();  // 创建并显示窗口
 
     Button button(window.getHwnd());
     button.text = L"&Test";
-   
+
     long long counter = 0;
     button.onClick = [&](Button& btn) {
-        RetryContinueDialog dlg(L"Test message");
-        
-        dlg.show();
-        window.close();
-        
+        btn.text = std::to_wstring(counter);
+        counter++;
+        btn.update();
     };
     //button.legacyStyle = true;
-    window.show();
     button.parent = window.getHwnd();
     button.show();
 
-    // 添加消息循环
-    MSG msg;
-    while (GetMessage(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-    }
+    Button buttonB(window.getHwnd());
+    buttonB.text = L"Test123";
+    buttonB.onClick = [&](Button& btn) {
+        btn.text = std::to_wstring(counter);
+        counter++;
+        btn.update();
+    };
+    buttonB.startPosition = Point(100, 20);
+    buttonB.update();
 
-    return msg.wParam;
+    // 添加消息循环
+    return window.run();
+
+
 }
